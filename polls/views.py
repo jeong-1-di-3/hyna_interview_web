@@ -1,4 +1,5 @@
-from django.shortcuts import render, get_object_or_404
+import select
+from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse, Http404
 from .models import Question
 
@@ -20,4 +21,14 @@ def results(request, question_id):
 
 
 def vote(request, question_id):
-    return HttpResponse("You're voting on question {}.".format(question_id))
+    question = get_object_or_404(Question, pk=question_id)
+
+    try:
+        selected_choice = question.choice_set.get(pk=request.POST["choice_select"])
+    except:
+        context = {"question": question, "error_message": "You didn't select a choice."}
+        return render(request, "polls/detail.html", context)
+    else:
+        selected_choice.votes += 1
+        selected_choice.save()  # 실제 DB 저장
+        return redirect("polls:results", question_id=question.id)
